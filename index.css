@@ -363,3 +363,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   text-decoration-style: dashed;
 }
 .reset-btn:hover { color: #5b5ef4; }
+
+/* ══ Hint tooltip animation ══ */
+@keyframes hint-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══ Selected saved card (compare mode) ══ */
+.saved-card.compare-active {
+  border-color: #5b5ef4 !important;
+  background: rgba(91,94,244,0.03) !important;
+}
+
+/* ══ Print styles ══ */
+@media print {
+  body { background: white !important; }
+  .no-print { display: none !important; }
+  .orb-1, .orb-2, .orb-3 { display: none !important; }
+  .main-layout { flex-direction: column !important; }
+  .inputs-col { display: none !important; }
+  .results-col { width: 100% !important; }
+  .card, .card-accent {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .card-accent {
+    background: #5b5ef4 !important;
+  }
+  footer { display: none !important; }
+}
