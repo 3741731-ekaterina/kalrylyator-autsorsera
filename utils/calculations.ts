@@ -9,24 +9,33 @@ export const calculateOutsourcingRate = (inputs: CalculatorInputs): CalculationR
     managerPercent,
     deptHeadSalary,
     profitPercent,
-    shiftHours
+    shiftHours,
+    workersCount,
+    workDaysPerMonth,
   } = inputs;
 
   // S_smz = S_worker * 0.06 (если налог включен)
   const smzTax = smzTaxEnabled ? workerSalary * 0.06 : 0;
-  
+
   // S_manager = S_worker * (M_manager / 100)
   const managerSalary = workerSalary * (managerPercent / 100);
 
-  // Price = (S_worker + S_smz + S_manager + M_head) / (1 - (C_overhead/100) - (P_profit/100))
+  // Себестоимость = прямые затраты до накладных и прибыли (₽/час, на 1 рабочего)
   const directCosts = workerSalary + smzTax + managerSalary + deptHeadSalary;
+  const costPrice = directCosts;
+
+  // Price = (S_worker + S_smz + S_manager + M_head) / (1 - (C_overhead/100) - (P_profit/100))
   const divisor = 1 - (overheadPercent / 100) - (profitPercent / 100);
-  
+
   // Guard against division by zero (e.g. overhead + profit >= 100%)
   const pricePerHour = divisor > 0 ? directCosts / divisor : 0;
-  
+
   const pricePerShift = pricePerHour * shiftHours;
   const grossProfitPerShift = pricePerShift * (profitPercent / 100);
+
+  // Месячные показатели (на всех рабочих)
+  const pricePerMonth = pricePerShift * workDaysPerMonth * workersCount;
+  const profitPerMonth = grossProfitPerShift * workDaysPerMonth * workersCount;
 
   // Details for breakdown
   const workerTotal = workerSalary + smzTax;
@@ -38,6 +47,9 @@ export const calculateOutsourcingRate = (inputs: CalculatorInputs): CalculationR
     pricePerHour,
     pricePerShift,
     grossProfitPerShift,
+    costPrice,
+    pricePerMonth,
+    profitPerMonth,
     breakdown: {
       workerTotal,
       overhead: overheadAmount,

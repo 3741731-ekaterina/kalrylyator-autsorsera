@@ -7,12 +7,17 @@ export interface CalculatorInputs {
   deptHeadSalary: number;    // M_head
   profitPercent: number;     // P_profit
   shiftHours: number;        // H_shift
+  workersCount: number;      // Количество рабочих на объекте
+  workDaysPerMonth: number;  // Рабочих дней в месяц
 }
 
 export interface CalculationResult {
   pricePerHour: number;
   pricePerShift: number;
   grossProfitPerShift: number;
+  costPrice: number;          // Себестоимость (прямые затраты) ₽/час
+  pricePerMonth: number;      // Месячная выручка (все рабочие)
+  profitPerMonth: number;     // Месячная прибыль (все рабочие)
   breakdown: {
     workerTotal: number;
     overhead: number;
