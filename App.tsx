@@ -180,65 +180,81 @@ const AnimatedNum: React.FC<{ value: number }> = ({ value }) => {
   return <>{fmt(displayed)}</>;
 };
 
-// ── Compare modal ──
-interface CompareModalProps { a: SavedCalculation; b: SavedCalculation; onClose: () => void; }
-const CompareModal: React.FC<CompareModalProps> = ({ a, b, onClose }) => {
-  type Row = { label: string; va: string; vb: string };
+// ── Compare modal (N расчётов) ──
+interface CompareModalProps { calcs: SavedCalculation[]; onClose: () => void; }
+const CompareModal: React.FC<CompareModalProps> = ({ calcs, onClose }) => {
+  type Row = { label: string; values: string[] };
+  const v = (c: SavedCalculation) => ({
+    r: c.result,
+    i: c.inputs,
+  });
+
   const rows: Row[] = [
-    { label: 'Цена для заказчика', va: `${fmt(a.result.pricePerHour)} ₽/ч`, vb: `${fmt(b.result.pricePerHour)} ₽/ч` },
-    { label: 'Себестоимость', va: `${fmt(a.result.costPrice)} ₽/ч`, vb: `${fmt(b.result.costPrice)} ₽/ч` },
-    { label: 'Стоимость смены', va: `${fmt(a.result.pricePerShift)} ₽`, vb: `${fmt(b.result.pricePerShift)} ₽` },
-    { label: 'Прибыль со смены', va: `${fmt(a.result.grossProfitPerShift)} ₽`, vb: `${fmt(b.result.grossProfitPerShift)} ₽` },
-    { label: 'Выручка / месяц', va: `${fmt(a.result.pricePerMonth)} ₽`, vb: `${fmt(b.result.pricePerMonth)} ₽` },
-    { label: 'Прибыль / месяц', va: `${fmt(a.result.profitPerMonth)} ₽`, vb: `${fmt(b.result.profitPerMonth)} ₽` },
-    { label: '__div__', va: '', vb: '' },
-    { label: 'ЗП рабочего', va: `${a.inputs.workerSalary} ₽/ч`, vb: `${b.inputs.workerSalary} ₽/ч` },
-    { label: 'Прибыль %', va: `${a.inputs.profitPercent}%`, vb: `${b.inputs.profitPercent}%` },
-    { label: 'Накладные %', va: `${a.inputs.overheadPercent}%`, vb: `${b.inputs.overheadPercent}%` },
-    { label: 'Рабочих', va: `${a.inputs.workersCount} чел`, vb: `${b.inputs.workersCount} чел` },
-    { label: 'Дней / мес', va: `${a.inputs.workDaysPerMonth}`, vb: `${b.inputs.workDaysPerMonth}` },
+    { label: 'Цена для заказчика', values: calcs.map(c => `${fmt(v(c).r.pricePerHour)} ₽/ч`) },
+    { label: 'Себестоимость',       values: calcs.map(c => `${fmt(v(c).r.costPrice)} ₽/ч`) },
+    { label: 'Стоимость смены',     values: calcs.map(c => `${fmt(v(c).r.pricePerShift)} ₽`) },
+    { label: 'Прибыль со смены',    values: calcs.map(c => `${fmt(v(c).r.grossProfitPerShift)} ₽`) },
+    { label: 'Выручка / месяц',     values: calcs.map(c => `${fmt(v(c).r.pricePerMonth)} ₽`) },
+    { label: 'Прибыль / месяц',     values: calcs.map(c => `${fmt(v(c).r.profitPerMonth)} ₽`) },
+    { label: '__div__',             values: [] },
+    { label: 'ЗП рабочего',        values: calcs.map(c => `${v(c).i.workerSalary} ₽/ч`) },
+    { label: 'Прибыль %',          values: calcs.map(c => `${v(c).i.profitPercent}%`) },
+    { label: 'Накладные %',        values: calcs.map(c => `${v(c).i.overheadPercent}%`) },
+    { label: 'Рабочих',            values: calcs.map(c => `${v(c).i.workersCount} чел`) },
+    { label: 'Дней / мес',         values: calcs.map(c => `${v(c).i.workDaysPerMonth}`) },
   ];
 
-  const isHigher = (va: string, vb: string): [boolean, boolean] => {
-    const na = parseFloat(va.replace(/[^\d.]/g, ''));
-    const nb = parseFloat(vb.replace(/[^\d.]/g, ''));
-    if (isNaN(na) || isNaN(nb) || na === nb) return [false, false];
-    return [na > nb, nb > na];
+  // Подсвечиваем максимальное значение в строке (только если не все одинаковые)
+  const isMax = (values: string[]): boolean[] => {
+    const nums = values.map(s => parseFloat(s.replace(/[^\d.]/g, '')));
+    if (nums.some(isNaN)) return values.map(() => false);
+    const max = Math.max(...nums);
+    const allSame = nums.every(n => n === max);
+    return nums.map(n => !allSame && n === max);
   };
+
+  const cols = calcs.length;
+  const colTemplate = `1.4fr repeat(${cols}, 1fr)`;
+  const modalWidth = Math.min(320 + cols * 160, 940);
 
   return (
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-box" style={{ maxWidth: 580, padding: '1.5rem' }}>
+      <div className="modal-box" style={{ maxWidth: modalWidth, padding: '1.5rem', width: '95vw' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#1e293b' }}>Сравнение расчётов</h3>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#1e293b' }}>
+            Сравнение расчётов · {cols}
+          </h3>
           <button onClick={onClose} style={{ background: '#f1f5f9', border: 'none', borderRadius: 10, width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
-        {/* Column headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <div />
-          {[a, b].map(c => (
-            <div key={c.id} style={{ background: 'rgba(91,94,244,0.07)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
-              <p style={{ margin: 0, fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{fmtDate(c.timestamp)}</p>
-            </div>
-          ))}
-        </div>
-        {/* Table */}
-        <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
-          {rows.map((row, i) => {
-            if (row.label === '__div__') return <div key={i} style={{ borderTop: '1px solid #f1f5f9', margin: '6px 0' }} />;
-            const [ha, hb] = isHigher(row.va, row.vb);
-            return (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 8, padding: '7px 0', borderBottom: '1px solid #f8faff', alignItems: 'center' }}>
-                <p style={{ margin: 0, fontSize: 12, color: '#64748b', fontWeight: 500 }}>{row.label}</p>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: ha ? '#10b981' : '#1e293b', textAlign: 'center' }}>{row.va}</p>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: hb ? '#10b981' : '#1e293b', textAlign: 'center' }}>{row.vb}</p>
+        <div style={{ overflowX: 'auto' }}>
+          {/* Column headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: colTemplate, gap: 8, marginBottom: 8, minWidth: 320 + cols * 130 }}>
+            <div />
+            {calcs.map(c => (
+              <div key={c.id} style={{ background: 'rgba(91,94,244,0.07)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
+                <p style={{ margin: 0, fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{fmtDate(c.timestamp)}</p>
               </div>
-            );
-          })}
+            ))}
+          </div>
+          {/* Table rows */}
+          <div style={{ maxHeight: '55vh', overflowY: 'auto', minWidth: 320 + cols * 130 }}>
+            {rows.map((row, i) => {
+              if (row.label === '__div__') return <div key={i} style={{ borderTop: '1px solid #f1f5f9', margin: '6px 0' }} />;
+              const highlights = isMax(row.values);
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: colTemplate, gap: 8, padding: '7px 0', borderBottom: '1px solid #f8faff', alignItems: 'center' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: '#64748b', fontWeight: 500 }}>{row.label}</p>
+                  {row.values.map((val, j) => (
+                    <p key={j} style={{ margin: 0, fontSize: 13, fontWeight: 700, color: highlights[j] ? '#10b981' : '#1e293b', textAlign: 'center' }}>{val}</p>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
         <p style={{ margin: '10px 0 14px', fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
-          Зелёным отмечены большие значения
+          Зелёным отмечены наибольшие значения в строке
         </p>
         <button onClick={onClose} className="btn-primary" style={{ width: '100%', padding: '11px', fontSize: 14 }}>Закрыть</button>
       </div>
@@ -329,7 +345,7 @@ const App: React.FC = () => {
   const handleCompareToggle = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCompareIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 2 ? [...prev, id] : [prev[1], id]
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
 
@@ -352,8 +368,8 @@ const App: React.FC = () => {
     });
   };
 
-  const compareCalcs = compareIds.length === 2
-    ? [savedCalculations.find(c => c.id === compareIds[0])!, savedCalculations.find(c => c.id === compareIds[1])!]
+  const compareCalcs = compareIds.length >= 2
+    ? compareIds.map(id => savedCalculations.find(c => c.id === id)!).filter(Boolean)
     : null;
 
   return (
@@ -375,8 +391,8 @@ const App: React.FC = () => {
       `}</style>
 
       {showSaveModal && <SaveModal onSave={handleSaveConfirm} onClose={() => setShowSaveModal(false)} />}
-      {showCompare && compareCalcs && compareCalcs[0] && compareCalcs[1] && (
-        <CompareModal a={compareCalcs[0]} b={compareCalcs[1]} onClose={() => { setShowCompare(false); setCompareIds([]); }} />
+      {showCompare && compareCalcs && compareCalcs.length >= 2 && (
+        <CompareModal calcs={compareCalcs} onClose={() => { setShowCompare(false); setCompareIds([]); }} />
       )}
 
       <div style={{ minHeight: '100vh', background: '#edf0fb', position: 'relative', overflowX: 'hidden' }}>
@@ -454,9 +470,12 @@ const App: React.FC = () => {
                 <div className="warning-banner" style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.25)' }}>
                   <WarnIcon color="#f59e0b" />
                   <div>
-                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#b45309' }}>Высокая нагрузка</p>
-                    <p style={{ margin: 0, fontSize: 12, color: '#d97706', lineHeight: 1.5 }}>
-                      Налоги + прибыль уже {totalPercent}% — цена для заказчика растёт быстро.
+                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#b45309' }}>Высокая нагрузка на цену</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#d97706', lineHeight: 1.6 }}>
+                      Накладные ({inputs.overheadPercent}%) + прибыль ({inputs.profitPercent}%) = <strong>{totalPercent}% от выручки</strong>.
+                      На покрытие прямых затрат остаётся лишь {100 - totalPercent}% — ваша ставка
+                      в <strong>{(1 / (1 - totalPercent / 100)).toFixed(1)}×</strong> выше себестоимости.
+                      Проверьте конкурентоспособность на рынке.
                     </p>
                   </div>
                 </div>
@@ -607,9 +626,11 @@ const App: React.FC = () => {
                   {compareIds.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'rgba(91,94,244,0.06)', border: '1px solid rgba(91,94,244,0.15)' }}>
                       <p style={{ margin: 0, fontSize: 13, color: '#5b5ef4', fontWeight: 600, flex: 1 }}>
-                        {compareIds.length === 1 ? 'Выберите второй расчёт для сравнения' : 'Два расчёта выбраны'}
+                        {compareIds.length === 1
+                          ? 'Выберите ещё расчёты для сравнения'
+                          : `Выбрано расчётов: ${compareIds.length}`}
                       </p>
-                      {compareIds.length === 2 && (
+                      {compareIds.length >= 2 && (
                         <button onClick={() => setShowCompare(true)} className="btn-primary"
                           style={{ padding: '7px 14px', fontSize: 12, borderRadius: 10 }}>
                           Сравнить
