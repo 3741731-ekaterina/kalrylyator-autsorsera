@@ -273,6 +273,7 @@ const App: React.FC = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showVat, setShowVat] = useState(false);
+  const [vatRate, setVatRate] = useState(20);
 
   // Load saved calculations
   useEffect(() => {
@@ -503,13 +504,34 @@ const App: React.FC = () => {
               <InputControl label="Рабочих дней в месяц" value={inputs.workDaysPerMonth} onChange={v => set('workDaysPerMonth', v)} min={1} max={31} unit="дней" />
 
               {/* НДС toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22, padding: '12px 14px', borderRadius: 14, background: 'rgba(91,94,244,0.04)', border: '1px solid rgba(91,94,244,0.1)', cursor: 'pointer' }}
-                onClick={() => setShowVat(!showVat)}>
-                <div className={`toggle-track${showVat ? ' active' : ''}`}><div className="toggle-thumb" /></div>
-                <div>
-                  <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 600, color: '#374151' }}>Показать цену с НДС (+20%)</p>
-                  <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>Все суммы без НДС — включите, если работаете с НДС</p>
+              <div style={{ marginBottom: 22, padding: '12px 14px', borderRadius: 14, background: 'rgba(91,94,244,0.04)', border: '1px solid rgba(91,94,244,0.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                  onClick={() => setShowVat(!showVat)}>
+                  <div className={`toggle-track${showVat ? ' active' : ''}`}><div className="toggle-thumb" /></div>
+                  <div>
+                    <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 600, color: '#374151' }}>Показать цену с НДС</p>
+                    <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>Все суммы без НДС — включите, если работаете с НДС</p>
+                  </div>
                 </div>
+                {showVat && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>Ставка НДС</label>
+                    <input
+                      type="number"
+                      value={vatRate}
+                      min={1}
+                      max={30}
+                      step={1}
+                      onChange={e => {
+                        const n = parseInt(e.target.value, 10);
+                        if (!isNaN(n)) setVatRate(Math.max(1, Math.min(30, n)));
+                      }}
+                      onClick={e => e.stopPropagation()}
+                      style={{ width: 64 }}
+                    />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>%</span>
+                  </div>
+                )}
               </div>
 
               <button onClick={() => setShowSaveModal(true)} className="btn-primary no-print" disabled={isInvalid}
@@ -549,10 +571,10 @@ const App: React.FC = () => {
                   </div>
                   {showVat && !isInvalid && (
                     <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>С НДС 20%</p>
+                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>С НДС {vatRate}%</p>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                         <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
-                          {fmt(Math.round(result.pricePerHour * 1.2))}
+                          {fmt(Math.round(result.pricePerHour * (1 + vatRate / 100)))}
                         </span>
                         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>₽/час</span>
                       </div>
