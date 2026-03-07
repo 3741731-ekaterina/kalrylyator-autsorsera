@@ -274,6 +274,7 @@ const App: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showVat, setShowVat] = useState(false);
   const [vatRate, setVatRate] = useState(20);
+  const [vatRateStr, setVatRateStr] = useState<string | null>(null);
 
   // Load saved calculations
   useEffect(() => {
@@ -518,14 +519,23 @@ const App: React.FC = () => {
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>Ставка НДС</label>
                     <input
                       type="number"
-                      value={vatRate}
+                      value={vatRateStr !== null ? vatRateStr : String(vatRate)}
                       min={1}
                       max={30}
                       step={1}
+                      onFocus={e => { setVatRateStr(String(vatRate)); e.target.select(); }}
                       onChange={e => {
-                        const n = parseInt(e.target.value, 10);
+                        const raw = e.target.value;
+                        setVatRateStr(raw);
+                        const n = parseInt(raw, 10);
                         if (!isNaN(n)) setVatRate(Math.max(1, Math.min(30, n)));
                       }}
+                      onBlur={() => {
+                        const n = parseInt(vatRateStr ?? '', 10);
+                        setVatRate(isNaN(n) ? 20 : Math.max(1, Math.min(30, n)));
+                        setVatRateStr(null);
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                       onClick={e => e.stopPropagation()}
                       style={{ width: 64 }}
                     />
