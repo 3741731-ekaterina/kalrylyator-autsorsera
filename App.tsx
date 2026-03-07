@@ -520,8 +520,6 @@ const App: React.FC = () => {
                     <input
                       type="number"
                       value={vatRateStr !== null ? vatRateStr : String(vatRate)}
-                      min={1}
-                      max={30}
                       step={1}
                       onFocus={e => { setVatRateStr(String(vatRate)); e.target.select(); }}
                       onChange={e => {
