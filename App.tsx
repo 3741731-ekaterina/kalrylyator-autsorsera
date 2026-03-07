@@ -272,6 +272,7 @@ const App: React.FC = () => {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showVat, setShowVat] = useState(false);
 
   // Load saved calculations
   useEffect(() => {
@@ -493,13 +494,23 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <InputControl label="Налоги и офис (%)" value={inputs.overheadPercent} onChange={v => set('overheadPercent', v)} min={0} max={50} unit="%" hint="Офис, бухгалтерия, налоги компании (рек. 11%)" />
+              <InputControl label="Налоги и офис (%)" value={inputs.overheadPercent} onChange={v => set('overheadPercent', v)} min={0} max={50} unit="%" hint="% от выручки (конечной цены). Считайте сами: сложите все накладные за месяц (аренда, бухгалтерия, налоги компании) и разделите на месячную выручку × 100." />
               <InputControl label="ЗП Менеджера (%)" value={inputs.managerPercent} onChange={v => set('managerPercent', v)} min={0} max={100} unit="%" hint="Процент от базовой ставки рабочего" />
               <InputControl label="ЗП Руководителя (фикс)" value={inputs.deptHeadSalary} onChange={v => set('deptHeadSalary', v)} min={0} max={500} unit="₽/час" />
               <InputControl label="Желаемая прибыль (%)" value={inputs.profitPercent} onChange={v => set('profitPercent', v)} min={0} max={50} unit="%" />
               <InputControl label="Часов в смене" value={inputs.shiftHours} onChange={v => set('shiftHours', v)} min={1} max={24} unit="ч" />
               <InputControl label="Рабочих на объекте" value={inputs.workersCount} onChange={v => set('workersCount', v)} min={1} max={500} unit="чел" />
               <InputControl label="Рабочих дней в месяц" value={inputs.workDaysPerMonth} onChange={v => set('workDaysPerMonth', v)} min={1} max={31} unit="дней" />
+
+              {/* НДС toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22, padding: '12px 14px', borderRadius: 14, background: 'rgba(91,94,244,0.04)', border: '1px solid rgba(91,94,244,0.1)', cursor: 'pointer' }}
+                onClick={() => setShowVat(!showVat)}>
+                <div className={`toggle-track${showVat ? ' active' : ''}`}><div className="toggle-thumb" /></div>
+                <div>
+                  <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 600, color: '#374151' }}>Показать цену с НДС (+20%)</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>Все суммы без НДС — включите, если работаете с НДС</p>
+                </div>
+              </div>
 
               <button onClick={() => setShowSaveModal(true)} className="btn-primary no-print" disabled={isInvalid}
                 style={{ width: '100%', padding: '14px', fontSize: 14, marginTop: 8, opacity: isInvalid ? 0.4 : 1, cursor: isInvalid ? 'not-allowed' : 'pointer' }}>
@@ -527,13 +538,26 @@ const App: React.FC = () => {
               {/* Row 1: per-hour / per-shift cards */}
               <div className="metrics-row" style={{ marginBottom: 14 }}>
                 <div className="card-accent" style={{ borderRadius: 20, padding: '20px 22px', opacity: isInvalid ? 0.5 : 1 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.65)' }}>Цена для заказчика</p>
+                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.65)' }}>
+                    Цена для заказчика {!showVat && <span style={{ fontWeight: 400, opacity: 0.7 }}>· без НДС</span>}
+                  </p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{ fontSize: 'clamp(2rem,4vw,2.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                       {isInvalid ? '—' : <AnimatedNum value={result.pricePerHour} />}
                     </span>
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>₽/час</span>
                   </div>
+                  {showVat && !isInvalid && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>С НДС 20%</p>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                          {fmt(Math.round(result.pricePerHour * 1.2))}
+                        </span>
+                        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>₽/час</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card" style={{ padding: '20px 22px', borderRadius: 20, opacity: isInvalid ? 0.5 : 1 }}>
@@ -602,7 +626,7 @@ const App: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div className="step-num">2</div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>Детализация расходов</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>Структура цены</h3>
                   </div>
                   <span className="badge" style={{ background: 'rgba(91,94,244,0.08)', color: '#5b5ef4', border: '1px solid rgba(91,94,244,0.15)' }}>
                     Структура 1 часа работы

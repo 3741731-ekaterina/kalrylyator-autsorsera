@@ -28,7 +28,8 @@ export const calculateOutsourcingRate = (inputs: CalculatorInputs): CalculationR
   const divisor = 1 - (overheadPercent / 100) - (profitPercent / 100);
 
   // Guard against division by zero (e.g. overhead + profit >= 100%)
-  const pricePerHour = divisor > 0 ? directCosts / divisor : 0;
+  // Округляем до целого рубля — чтобы pricePerShift = pricePerHour × shiftHours давал точный результат
+  const pricePerHour = divisor > 0 ? Math.round(directCosts / divisor) : 0;
 
   const pricePerShift = pricePerHour * shiftHours;
   const grossProfitPerShift = pricePerShift * (profitPercent / 100);
