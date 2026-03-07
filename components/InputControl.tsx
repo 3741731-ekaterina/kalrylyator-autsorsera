@@ -16,10 +16,14 @@ export const InputControl: React.FC<InputControlProps> = ({
   label, value, onChange, min, max, step = 1, unit, hint,
 }) => {
   const [hintOpen, setHintOpen] = useState(false);
+  // Локальная строка для редактирования — позволяет вводить промежуточные значения
+  const [editStr, setEditStr] = useState<string | null>(null);
   const hintRef = useRef<HTMLDivElement>(null);
+
   const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
   const sliderBg = `linear-gradient(to right, #5b5ef4 ${pct}%, #e2e8f0 ${pct}%)`;
 
+  // Автозакрытие тултипа
   useEffect(() => {
     if (!hintOpen) return;
     const close = (e: MouseEvent | TouchEvent) => {
@@ -34,6 +38,35 @@ export const InputControl: React.FC<InputControlProps> = ({
       clearTimeout(timer);
     };
   }, [hintOpen]);
+
+  // При фокусе — выделяем весь текст, чтобы следующий символ заменил его целиком
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setEditStr(String(value));
+    e.target.select();
+  };
+
+  // При вводе — обновляем строку и синхронизируем ползунок (если значение корректное)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setEditStr(raw);
+    const n = parseInt(raw, 10);
+    if (!isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
+  };
+
+  // При потере фокуса — финализируем значение, сбрасываем локальную строку
+  const handleBlur = () => {
+    const n = parseInt(editStr ?? '', 10);
+    onChange(isNaN(n) ? min : Math.max(min, Math.min(max, n)));
+    setEditStr(null);
+  };
+
+  // Enter тоже завершает редактирование
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+  };
+
+  // Показываем editStr пока поле активно, иначе — чистое число
+  const displayValue = editStr !== null ? editStr : String(value);
 
   return (
     <div style={{ marginBottom: 22 }}>
@@ -73,14 +106,14 @@ export const InputControl: React.FC<InputControlProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
           <input
             type="number"
-            value={value}
+            value={displayValue}
             min={min}
             max={max}
             step={step}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
-            }}
+            onFocus={handleFocus}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             style={{ width: 72 }}
           />
           <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', minWidth: 36 }}>{unit}</span>
