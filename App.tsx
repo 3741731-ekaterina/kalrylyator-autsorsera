@@ -273,7 +273,7 @@ const App: React.FC = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showVat, setShowVat] = useState(false);
-  const [vatRate, setVatRate] = useState(20);
+  const [vatRate, setVatRate] = useState(0);
   const [vatRateStr, setVatRateStr] = useState<string | null>(null);
 
   // Load saved calculations
@@ -519,9 +519,9 @@ const App: React.FC = () => {
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>Ставка НДС</label>
                     <input
                       type="number"
-                      value={vatRateStr !== null ? vatRateStr : String(vatRate)}
+                      value={vatRateStr !== null ? vatRateStr : (vatRate > 0 ? String(vatRate) : '')}
                       step={1}
-                      onFocus={e => { setVatRateStr(String(vatRate)); e.target.select(); }}
+                      onFocus={e => { setVatRateStr(vatRate > 0 ? String(vatRate) : ''); e.target.select(); }}
                       onChange={e => {
                         const raw = e.target.value;
                         setVatRateStr(raw);
@@ -530,7 +530,7 @@ const App: React.FC = () => {
                       }}
                       onBlur={() => {
                         const n = parseInt(vatRateStr ?? '', 10);
-                        setVatRate(isNaN(n) ? 20 : Math.max(1, Math.min(30, n)));
+                        setVatRate(isNaN(n) || n <= 0 ? 0 : Math.min(30, n));
                         setVatRateStr(null);
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -577,7 +577,7 @@ const App: React.FC = () => {
                     </span>
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>₽/час</span>
                   </div>
-                  {showVat && !isInvalid && (
+                  {showVat && !isInvalid && vatRate > 0 && (
                     <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                       <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>С НДС {vatRate}%</p>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
