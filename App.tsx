@@ -583,7 +583,9 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="card" style={{ padding: '20px 22px', borderRadius: 20, opacity: isInvalid ? 0.5 : 1 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8' }}>Стоимость смены</p>
+                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8' }}>
+                    Стоимость смены {showVat && <span style={{ fontWeight: 400, opacity: 0.7 }}>· без НДС</span>}
+                  </p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{ fontSize: 'clamp(1.8rem,3.5vw,2.5rem)', fontWeight: 900, color: '#1e293b', lineHeight: 1 }}>
                       {isInvalid ? '—' : <AnimatedNum value={result.pricePerShift} />}
@@ -593,7 +595,9 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="card" style={{ padding: '20px 22px', borderRadius: 20, opacity: isInvalid ? 0.5 : 1 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8' }}>Прибыль со смены</p>
+                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8' }}>
+                    Прибыль со смены {showVat && <span style={{ fontWeight: 400, opacity: 0.7 }}>· без НДС</span>}
+                  </p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{ fontSize: 'clamp(1.8rem,3.5vw,2.5rem)', fontWeight: 900, color: '#10b981', lineHeight: 1 }}>
                       {isInvalid ? '—' : <AnimatedNum value={result.grossProfitPerShift} />}
